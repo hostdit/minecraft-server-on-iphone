@@ -40,19 +40,21 @@ Nothing to install other than Xcode. Foundation, Network and SwiftUI ship with t
 ## Layout
 
 ```
-McServerApp.swift
-Server.swift
-Packets.swift
-World.swift
-Telemetry.swift
-ServerView.swift
+McServer.xcodeproj
+McServer/
+  McServerApp.swift
+  Server.swift
+  Packets.swift
+  World.swift
+  Telemetry.swift
+  ServerView.swift
 ```
 
 - `Packets` is varints, strings, big endian numbers, position encoding and the packet framer, plus a reader and a stream reassembler.
 - `World` is the flat chunk column.
-- `Telemetry` is the battery, the thermal state and the model name table.
+- `Telemetry` is the battery and the model name table.
 - `Server` is the listener, the sessions and the packet handlers.
-- `ServerView` is the log, the chat field and the Start button.
+- `ServerView` is the log, the chat field and the Start and Stop button.
 - `McServerApp` is four lines.
 
 Only `ServerView` and `Telemetry` touch UIKit. The protocol, the framing and the world generator are plain Foundation, so they build anywhere Swift does.
@@ -61,13 +63,13 @@ Only `ServerView` and `Telemetry` touch UIKit. The protocol, the framing and the
 
 1. Open the project in Xcode and set the run destination to your phone, not the simulator.
 
-2. Signing. Select the McServer target, Signing & Capabilities, pick your team. A free Apple ID works. The app expires after seven days on a free account and needs rebuilding, a paid account gets a year.
+2. Signing. Select the McServer target, Signing & Capabilities, pick your team, and change the Bundle Identifier to something of your own like `com.yourname.McServer`. A free Apple ID works. The app expires after seven days on a free account and needs rebuilding, a paid account gets a year.
 
 3. Run it once from Xcode to install. After that, launch it from the home screen. Launching from Xcode means LLDB attaches, and over a wireless connection that can leave you on a black screen for minutes while it resolves symbols from the device. Nothing is wrong, it is just the debugger. Uncheck Debug executable in the scheme if you want Xcode to install and get out of the way.
 
 4. Allow the local network prompt the first time. iOS asks once, and declining it means nothing on your network can see the server.
 
-5. Press Start. The first log line is the address to connect to.
+5. The server starts when the app opens or press Start. The first log line is the address to connect to.
 
 6. Connect to that address in Minecraft 1.8 via Direct Connect, or let LAN scanning find it.
 
@@ -85,7 +87,7 @@ iOS gives you `NWListener`, so a TCP server is a few lines and the OS handles th
 
 **Stages.** A connection starts in handshake and says which of two things it wants. Status gets the JSON server list entry and a ping echo, and the client closes. Login gets a success packet with a random UUID, the world, and a keep-alive task. After that it's in play, where the only packet read is chat.
 
-Everything else the client sends in play is dropped. Movement, digging, inventory, arm swings, all of it. This is the whole reason the world doesn't work, and also the whole reason the server fits in 600 lines.
+Everything else the client sends in play is dropped. Movement, digging, inventory, arm swings, all of it. This is the whole reason the world doesn't work, and also the whole reason the server fits in about 700 lines.
 
 **Chunks.** The reason this targets 1.8 and not a current version. In 1.8, a chunk section is a flat array of `(id << 4) | meta` shorts, then block light, then sky light, then biomes, and you can send it uncompressed. Modern versions use palette encoded, bit packed longs and expect zlib. The join sequence here is 49 chunks of one section, bedrock, two dirt, grass, air above, fully lit. One column is built once and posted 49 times with different coordinates.
 
